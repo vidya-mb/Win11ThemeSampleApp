@@ -18,51 +18,56 @@ namespace Win11ThemeTest
 
         public SliderTest()
         {
+            var appPath = ConfigurationManager.AppSettings["Testpath"];
+            app = LaunchApplication(appPath);
+            using var automation = new UIA3Automation();
+            window = app?.GetMainWindow(automation);
+            testSlider = window?.FindFirstDescendant(cf => cf.ByAutomationId("sliderButton")).AsButton();
+            ClickButton(testSlider);
+            sliderWindow = window?.FindFirstDescendant(cf => cf.ByName("SliderWindow")).AsWindow();
+            slider = sliderWindow?.FindFirstDescendant(cf => cf.ByAutomationId("slider")).AsSlider();
+        }
+        private static Application? LaunchApplication(string? appPath)
+        {
             try
             {
-                var appPath = ConfigurationManager.AppSettings["Testpath"];
-                app = Application.Launch(appPath);
-                using var automation = new UIA3Automation();
-                window = app.GetMainWindow(automation);
-                testSlider = window.FindFirstDescendant(cf => cf.ByAutomationId("sliderButton")).AsButton();
-                Mouse.Click(testSlider.GetClickablePoint());
-                Wait.UntilInputIsProcessed(TimeSpan.FromMilliseconds(2000));
-                sliderWindow = window.FindFirstDescendant(cf => cf.ByName("SliderWindow")).AsWindow();
-                slider = sliderWindow.FindFirstDescendant(cf => cf.ByAutomationId("slider")).AsSlider();
+                return Application.Launch(appPath);
             }
             catch (Exception ex)
             {
-                var filePath = ConfigurationManager.AppSettings["logpath"];
-                if (filePath != null)
-                {
-                    if (!Directory.Exists(filePath))
-                    {
-                        Directory.CreateDirectory(filePath);
-                    }
-                    filePath = filePath + "log_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt";   //Text File Name
-                    if (!File.Exists(filePath))
-                    {
-                        File.Create(filePath).Dispose();
-                    }
-                    using StreamWriter sw = File.AppendText(filePath);
-                    string error = "Log Written Date:" + " " + DateTime.Now.ToString() + "\nError Message:" + " " + ex.Message.ToString();
-                    sw.WriteLine("-----------Exception Details on " + " " + DateTime.Now.ToString() + "-----------------");
-                    sw.WriteLine("-------------------------------------------------------------------------------------");
-                    sw.WriteLine(error);
-                    sw.Flush();
-                    sw.Close();
-                }
-                else
-                {
-                    throw new ArgumentNullException();
-                }
-
+                LogException(ex);
+                throw;
             }
+        }
+
+        private static void ClickButton(Button? button)
+        {
+            if (button == null) throw new ArgumentNullException(nameof(button));
+
+            Mouse.Click(button.GetClickablePoint());
+            Wait.UntilInputIsProcessed(TimeSpan.FromMilliseconds(500));
+        }
+
+        private static void LogException(Exception ex)
+        {
+            var filePath = ConfigurationManager.AppSettings["logpath"];
+            if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
+
+            if (!Directory.Exists(filePath))
+            {
+                Directory.CreateDirectory(filePath);
+            }
+
+            var logFilePath = Path.Combine(filePath, $"log_{DateTime.Now:yyyyMMddHHmmss}.txt");
+            using StreamWriter sw = new(logFilePath, append: true);
+            sw.WriteLine("-----------Exception Details on " + DateTime.Now + "-----------------");
+            sw.WriteLine("-------------------------------------------------------------------------------------");
+            sw.WriteLine($"Log Written Date: {DateTime.Now}\nError Message: {ex.Message}");
         }
 
         //test if slider is available
         [Test]
-        public void Slider1_isSliderAvailable()
+        public void Slider1_IsSliderAvailable()
         {
             Assert.Multiple(() =>
             {
@@ -72,7 +77,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void Slider2_minMaxOfSlider()
+        public void Slider2_MinMaxOfSlider()
         {
             Assert.That(slider, Is.Not.Null);
             Assert.That(slider.Minimum, Is.EqualTo(0));
@@ -81,7 +86,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void Slider3_largeIncrement()
+        public void Slider3_LargeIncrement()
         {
             Assert.That(slider, Is.Not.Null);
             slider.LargeIncrement();
@@ -91,7 +96,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void Slider4_thumbSlide()
+        public void Slider4_ThumbSlide()
         {
             Assert.That(slider, Is.Not.Null);
             var thumb = slider.Thumb;
@@ -102,7 +107,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void Slider5_largeDecrement()
+        public void Slider5_LargeDecrement()
         {
             Assert.That(slider, Is.Not.Null);
             slider.LargeIncrement();
@@ -112,7 +117,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void Slider6_smallDecrement()
+        public void Slider6_SmallDecrement()
         {
             Assert.That(slider, Is.Not.Null);
             var btn = slider.FindFirstChild(cf => cf.ByAutomationId("IncreaseLarge")).AsButton();
@@ -125,7 +130,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void Slider7_smallIncrement()
+        public void Slider7_SmallIncrement()
         {
             Assert.That(slider, Is.Not.Null);
             var btn = slider.FindFirstChild(cf => cf.ByAutomationId("IncreaseLarge")).AsButton();
@@ -138,18 +143,18 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void Slider8_closeWindows()
+        public void Slider8_CloseWindows()
         {
             if (app != null)
             {
                 app.Close();
+                Assert.That(app.Close(), Is.True);
                 Console.WriteLine("Application closed successfully.");
-                Assert.That(app.Close());
             }
             else
             {
                 Console.WriteLine("Application not found.");
-                Assert.That(app.Close());
+                Assert.Fail("Application not found.");
             }
         }
     }

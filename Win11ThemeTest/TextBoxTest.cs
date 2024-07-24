@@ -22,50 +22,56 @@ namespace Win11ThemeTest
 
         public TextBoxTests()
         {
+                var appPath = ConfigurationManager.AppSettings["Testpath"];
+                app = LaunchApplication(appPath);
+                mainWindow = app?.GetMainWindow(automation);
+                txtButton = mainWindow?.FindFirstDescendant(cf => cf.ByAutomationId("txtBoxButton")).AsButton();
+                ClickButton(txtButton);
+                textWindow = mainWindow?.FindFirstDescendant(cf => cf.ByName("TextWindow")).AsWindow();
+                textBox = textWindow?.FindFirstDescendant(cf => cf.ByAutomationId("tbTxt")).AsTextBox();
+                disabledTextBox = textWindow?.FindFirstDescendant(cf => cf.ByAutomationId("tbTxt_disabled")).AsTextBox();
+                multiLineTextBox = textWindow?.FindFirstDescendant(cf => cf.ByAutomationId("tbTxt_multiline")).AsTextBox();
+        }
+        private static Application? LaunchApplication(string? appPath)
+        {
             try
             {
-                var appPath = ConfigurationManager.AppSettings["Testpath"];
-                app = Application.Launch(appPath);
-                mainWindow = app.GetMainWindow(automation);
-                txtButton = mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("txtBoxButton")).AsButton();
-                Mouse.Click(txtButton.GetClickablePoint());
-                Wait.UntilInputIsProcessed(TimeSpan.FromMilliseconds(500));
-                textWindow = mainWindow.FindFirstDescendant(cf => cf.ByName("TextWindow")).AsWindow();
-                textBox = textWindow.FindFirstDescendant(cf => cf.ByAutomationId("tbTxt")).AsTextBox();
-                disabledTextBox = textWindow.FindFirstDescendant(cf => cf.ByAutomationId("tbTxt_disabled")).AsTextBox();
-                multiLineTextBox = textWindow.FindFirstDescendant(cf => cf.ByAutomationId("tbTxt_multiline")).AsTextBox();
+                return Application.Launch(appPath);
             }
             catch (Exception ex)
             {
-                var filePath = ConfigurationManager.AppSettings["logpath"];
-                if (filePath != null)
-                {
-                    if (!Directory.Exists(filePath))
-                    {
-                        Directory.CreateDirectory(filePath);
-                    }
-                    filePath = filePath + "log_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt";   //Text File Name
-                    if (!File.Exists(filePath))
-                    {
-                        File.Create(filePath).Dispose();
-                    }
-                    using StreamWriter sw = File.AppendText(filePath);
-                    string error = "Log Written Date:" + " " + DateTime.Now.ToString() + "\nError Message:" + " " + ex.Message.ToString();
-                    sw.WriteLine("-----------Exception Details on " + " " + DateTime.Now.ToString() + "-----------------");
-                    sw.WriteLine("-------------------------------------------------------------------------------------");
-                    sw.WriteLine(error);
-                    sw.Flush();
-                    sw.Close();
-                }
-                else
-                {
-                    throw new ArgumentNullException();
-                }
+                LogException(ex);
+                throw;
             }
         }
 
+        private static void ClickButton(Button? button)
+        {
+            if (button == null) throw new ArgumentNullException(nameof(button));
+
+            Mouse.Click(button.GetClickablePoint());
+            Wait.UntilInputIsProcessed(TimeSpan.FromMilliseconds(500));
+        }
+
+        private static void LogException(Exception ex)
+        {
+            var filePath = ConfigurationManager.AppSettings["logpath"];
+            if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
+
+            if (!Directory.Exists(filePath))
+            {
+                Directory.CreateDirectory(filePath);
+            }
+
+            var logFilePath = Path.Combine(filePath, $"log_{DateTime.Now:yyyyMMddHHmmss}.txt");
+            using StreamWriter sw = new(logFilePath, append: true);
+            sw.WriteLine("-----------Exception Details on " + DateTime.Now + "-----------------");
+            sw.WriteLine("-------------------------------------------------------------------------------------");
+            sw.WriteLine($"Log Written Date: {DateTime.Now}\nError Message: {ex.Message}");
+        }
+
         [Test]
-        public void Textbox_findTextBox()
+        public void Textbox_FindTextBox()
         {
             Assert.Multiple(() =>
             {
@@ -76,7 +82,7 @@ namespace Win11ThemeTest
 
         #region FunctionalTests
         [Test]
-        public void TextBox_enterText()
+        public void TextBox_EnterText()
         {
             Assert.That(textBox, Is.Not.Null);
             textBox.Enter("Hello World!");
@@ -86,7 +92,7 @@ namespace Win11ThemeTest
 
         //Verify that the text box accepts alphanumeric characters.
         [Test]
-        public void TextBox_enterAlphaNumericText()
+        public void TextBox_EnterAlphaNumericText()
         {
             var expectedText = "/\\d.*[a-zA-Z]|[a-zA-Z].*\\d/";
             Assert.That(textBox, Is.Not.Null);
@@ -104,7 +110,7 @@ namespace Win11ThemeTest
 
         //Verify that the text box accepts special characters.
         [Test]
-        public void TextBox_enterSpecialCharText()
+        public void TextBox_EnterSpecialCharText()
         {
             var expectedText = "@#$%^&*";
             Assert.That(textBox, Is.Not.Null);
@@ -122,7 +128,7 @@ namespace Win11ThemeTest
 
         //Check if the text box can handle empty input.
         [Test]
-        public void TextBox_enterEmptyText()
+        public void TextBox_EnterEmptyText()
         {
             var emptyText = string.Empty;
             Assert.That(textBox, Is.Not.Null);
@@ -140,7 +146,7 @@ namespace Win11ThemeTest
 
         //Test input validation for correct data formats (e.g., email validation).
         [Test]
-        public void TextBox_enterEmailIdText()
+        public void TextBox_EnterEmailIdText()
         {
             var expectedText = "ram.shyam1234@yahoo.com";
             Assert.That(textBox, Is.Not.Null);
@@ -157,7 +163,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void TextBox_multiLineTextbox()
+        public void TextBox_MultiLineTextbox()
         {
             string testDescription = "New line text.\nLine1\nLine2 \nLine3";
             Assert.That(multiLineTextBox, Is.Not.Null);
@@ -222,7 +228,7 @@ namespace Win11ThemeTest
 
         //Verify that users can copy and paste text from and to the text box.
         [Test]
-        public void TextBox2_rightClickTestCut()
+        public void TextBox2_RightClickTestCut()
         {
             Assert.That(textBox, Is.Not.Null);
             textBox.Enter("Hello World!Hello World!Hello World!Hello World!Hello World!Hell World!Hello World!Hello World!Hello World!");
@@ -245,7 +251,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void TextBox21_rightClickTestCopy()
+        public void TextBox21_RightClickTestCopy()
         {
             Assert.That(textBox, Is.Not.Null);
             textBox.Enter("Hello World!Hello World!Hello World!Hello World!Hello World!Hell World!Hello World!Hello World!Hello World!");
@@ -267,7 +273,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void TextBox212_rightClickTest_Paste()
+        public void TextBox212_RightClickTest_Paste()
         {
             Assert.That(textBox, Is.Not.Null);
             textBox.Enter("Hello World!Hello World!Hello World!Hello World!Hello World!Hell World!Hello World!Hello World!Hello World!");
@@ -287,7 +293,7 @@ namespace Win11ThemeTest
         /* Negative Test Scenarios */
         //Attempt to enter code snippets or HTML code into the input box to see if the same is rejected.
         [Test]
-        public void TextBox3_htmlTextBox()
+        public void TextBox3_HtmlTextBox()
         {
             Assert.That(textBox, Is.Not.Null);
             textBox.Text = string.Empty;
@@ -299,7 +305,7 @@ namespace Win11ThemeTest
         /* Test Cases For Disabled TextBox
          */
         [Test]
-        public void TextBox3_disabledTextBoxAvailability()
+        public void TextBox3_DisabledTextBoxAvailability()
         {
             Assert.Multiple(() =>
             {
@@ -310,7 +316,7 @@ namespace Win11ThemeTest
 
         //Check if any pre-populated value should be displayed as per requirement.
         [Test]
-        public void TextBox3_disabledTextBox()
+        public void TextBox3_DisabledTextBox()
         {
             Assert.That(textWindow, Is.Not.Null);
             Wait.UntilInputIsProcessed();
@@ -320,7 +326,7 @@ namespace Win11ThemeTest
 
         //Check if you cannot edit disabled TextBox.
         [Test]
-        public void TextBox_disabledEditTextBox()
+        public void TextBox_DisabledEditTextBox()
         {
             Assert.That(textWindow, Is.Not.Null);
             Wait.UntilInputIsProcessed();
@@ -331,7 +337,7 @@ namespace Win11ThemeTest
 
         #region UITests
         [Test]
-        public void TextBox_clickOnTextbox()
+        public void TextBox_ClickOnTextbox()
         {
             Assert.That(textBox, Is.Not.Null);
             Mouse.Click(textBox.GetClickablePoint());
@@ -339,7 +345,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void TextBox_fontFamily()
+        public void TextBox_FontFamily()
         {
             string expected_FontFamily = "Segoe UI";
             Assert.That(textBox, Is.Not.Null);
@@ -350,7 +356,7 @@ namespace Win11ThemeTest
         }
 
         [Test]
-        public void TextBox_textForegroundColor()
+        public void TextBox_TextForegroundColor()
         {
             // var automation = new UIA3Automation();
             Assert.That(textBox, Is.Not.Null);
@@ -387,13 +393,13 @@ namespace Win11ThemeTest
             if (app != null)
             {
                 app.Close();
+                Assert.That(app.Close(), Is.True);
                 Console.WriteLine("Application closed successfully.");
-                Assert.That(app.Close());
             }
             else
             {
                 Console.WriteLine("Application not found.");
-                Assert.That(app.Close());
+                Assert.Fail("Application not found.");
             }
         }
     }

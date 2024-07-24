@@ -32,60 +32,66 @@ namespace Win11ThemeTest
 
         public RadioButtonTests()
         {
+                var appPath = ConfigurationManager.AppSettings["Testpath"];
+                app = LaunchApplication(appPath);
+                using var automation = new UIA3Automation();
+                window = app?.GetMainWindow(automation);
+                testButton = window?.FindFirstDescendant(cf => cf.ByAutomationId("radioButton")).AsButton();
+                ClickButton(testButton);
+                radioBtnWindow = window?.FindFirstDescendant(cf => cf.ByName("RadioButtonWindow")).AsWindow();
+                optionA = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("Option A")).AsRadioButton();
+                optionB = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("Option B")).AsRadioButton();
+                optionC = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("Option C")).AsRadioButton();
+                optionD = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("Option D")).AsRadioButton();
+
+                radioButton1 = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("RadioButton1")).AsRadioButton();
+                radioButton2 = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("RadioButton2")).AsRadioButton();
+                radioButton3 = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("RadioButton3")).AsRadioButton();
+                radioButton4 = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("RadioButton4")).AsRadioButton();
+                radioButton5 = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("RadioButton5")).AsRadioButton();
+                radioButton6 = radioBtnWindow?.FindFirstDescendant(cf => cf.ByName("RadioButton6")).AsRadioButton();
+        }
+
+        private static Application? LaunchApplication(string? appPath)
+        {
             try
             {
-                var appPath = ConfigurationManager.AppSettings["Testpath"];
-                app = Application.Launch(appPath);
-                using var automation = new UIA3Automation();
-                window = app.GetMainWindow(automation);
-                testButton = window.FindFirstDescendant(cf => cf.ByAutomationId("radioButton")).AsButton();
-                Mouse.Click(testButton.GetClickablePoint());
-                Wait.UntilInputIsProcessed(TimeSpan.FromMilliseconds(2000));
-                radioBtnWindow = window.FindFirstDescendant(cf => cf.ByName("RadioButtonWindow")).AsWindow();
-                optionA = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("Option A")).AsRadioButton();
-                optionB = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("Option B")).AsRadioButton();
-                optionC = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("Option C")).AsRadioButton();
-                optionD = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("Option D")).AsRadioButton();
-
-                radioButton1 = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("RadioButton1")).AsRadioButton();
-                radioButton2 = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("RadioButton2")).AsRadioButton();
-                radioButton3 = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("RadioButton3")).AsRadioButton();
-                radioButton4 = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("RadioButton4")).AsRadioButton();
-                radioButton5 = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("RadioButton5")).AsRadioButton();
-                radioButton6 = radioBtnWindow.FindFirstDescendant(cf => cf.ByName("RadioButton6")).AsRadioButton();
+                return Application.Launch(appPath);
             }
             catch (Exception ex)
             {
-                var filePath = ConfigurationManager.AppSettings["logpath"];
-                if (filePath != null)
-                {
-                    if (!Directory.Exists(filePath))
-                    {
-                        Directory.CreateDirectory(filePath);
-                    }
-                    filePath = filePath + "log_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt";   //Text File Name
-                    if (!File.Exists(filePath))
-                    {
-                        File.Create(filePath).Dispose();
-                    }
-                    using StreamWriter sw = File.AppendText(filePath);
-                    string error = "Log Written Date:" + " " + DateTime.Now.ToString() + "\nError Message:" + " " + ex.Message.ToString();
-                    sw.WriteLine("-----------Exception Details on " + " " + DateTime.Now.ToString() + "-----------------");
-                    sw.WriteLine("-------------------------------------------------------------------------------------");
-                    sw.WriteLine(error);
-                    sw.Flush();
-                    sw.Close();
-                }
-                else
-                {
-                    throw new ArgumentNullException();
-                }
-
+                LogException(ex);
+                throw;
             }
         }
 
+        private static void ClickButton(Button? button)
+        {
+            if (button == null) throw new ArgumentNullException(nameof(button));
+
+            Mouse.Click(button.GetClickablePoint());
+            Wait.UntilInputIsProcessed(TimeSpan.FromMilliseconds(500));
+        }
+
+        private static void LogException(Exception ex)
+        {
+            var filePath = ConfigurationManager.AppSettings["logpath"];
+            if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
+
+            if (!Directory.Exists(filePath))
+            {
+                Directory.CreateDirectory(filePath);
+            }
+
+            var logFilePath = Path.Combine(filePath, $"log_{DateTime.Now:yyyyMMddHHmmss}.txt");
+            using StreamWriter sw = new(logFilePath, append: true);
+            sw.WriteLine("-----------Exception Details on " + DateTime.Now + "-----------------");
+            sw.WriteLine("-------------------------------------------------------------------------------------");
+            sw.WriteLine($"Log Written Date: {DateTime.Now}\nError Message: {ex.Message}");
+        }
+
         [Test]
-        public void RadioButton1_isUncheck()
+        public void RadioButton1_IsUncheck()
         {
             Assert.That(optionA, Is.Not.Null);
             Assert.That(optionA.IsChecked, Is.False);
@@ -102,7 +108,7 @@ namespace Win11ThemeTest
 
         //Validate that clicking on the label associated with a radio button selects the button.
         [Test]
-        public void RadioButton2_labelCheck()
+        public void RadioButton2_LabelCheck()
         {
             Assert.That(optionA, Is.Not.Null);
             Mouse.Click(optionA.GetClickablePoint());
@@ -322,13 +328,13 @@ namespace Win11ThemeTest
             if (app != null)
             {
                 app.Close();
+                Assert.That(app.Close(), Is.True);
                 Console.WriteLine("Application closed successfully.");
-                Assert.That(app.Close());
             }
             else
             {
                 Console.WriteLine("Application not found.");
-                Assert.That(app.Close());
+                Assert.Fail("Application not found.");
             }
         }
     }

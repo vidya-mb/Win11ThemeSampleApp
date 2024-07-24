@@ -33,7 +33,7 @@ namespace Win11ThemeTest
             comboBoxBind = comboWindow?.FindFirstDescendant(cf => cf.ByAutomationId("comboBoxBind")).AsComboBox();
         }
 
-        private Application? LaunchApplication(string? appPath)
+        private static Application? LaunchApplication(string? appPath)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace Win11ThemeTest
             }
         }
 
-        private void ClickButton(Button? button)
+        private static void ClickButton(Button? button)
         {
             if (button == null) throw new ArgumentNullException(nameof(button));
 
@@ -54,7 +54,7 @@ namespace Win11ThemeTest
             Wait.UntilInputIsProcessed(TimeSpan.FromMilliseconds(500));
         }
 
-        private void LogException(Exception ex)
+        private static void LogException(Exception ex)
         {
             var filePath = ConfigurationManager.AppSettings["logpath"];
             if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
